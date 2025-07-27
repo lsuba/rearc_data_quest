@@ -32,7 +32,7 @@ gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-envir
 
 echo '--- Deployment of Cloud Scheduler ---'
 gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
-    ---schedule="${CS_SCHEDULER_RUN}" \
+    --schedule="${CS_SCHEDULER_RUN}" \
     --uri="https://${REGION}-${PROJECT_ID}.cloudfunctions.net/${FUNCTION_NAME}" \
     --http-method=${CS_HTTP_METHOD} \
     --description="${CS_DESC}" \
