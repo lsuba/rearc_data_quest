@@ -40,3 +40,4 @@ gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
         # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \
         # --oidc-service-account-email=${SERVICE_ACCOUNT} \
         # --attempt-deadline=${CS_ATTEMPT_DEADLINE}
+
