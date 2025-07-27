@@ -1,10 +1,11 @@
 echo '###--- START of deploy.sh ---###'
 set -e
+echo $DIR
 source "${DIR}/.env.local"
 CODE_PY_DIR="${DIR}/src"
 PROJECT_ID=$(gcloud config get-value project)
 
-echo $DIR
+
 echo $CODE_PY_DIR
 echo $PROJECT_ID
 
