@@ -1,0 +1,11 @@
+functions-framework==#.*
+google-cloud
+google-cloud-secret-manager
+google-cloud-storage
+PyYAML
+pytz
+google-cloud-logging
+pandas
+pandas-gbq
+google-cloud-pubsub
+google-cloud-firestore
