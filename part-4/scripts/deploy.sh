@@ -4,10 +4,13 @@ source "/workspace/part-4/scripts/.env.local"
 echo "${DIR}"
 CODE_PY_DIR="${DIR}/src"
 PROJECT_ID=$(gcloud config get-value project)
+SECRET_PROJECT=$(gcloud projects list --filter="$(gcloud config get-value project)" --format="value(PROJECT_NUMBER)")
 
 
 echo $CODE_PY_DIR
 echo $PROJECT_ID
+SERVICE_ACCOUNT="${SECRET_PROJECT}-${CS_SA}"
+echo $SERVICE_ACCOUNT
 
 echo '--- Deployment of Cloud Run Function ---'
 gcloud functions deploy ${FUNCTION_NAME} \
@@ -37,8 +40,13 @@ gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
     --http-method=${CS_HTTP_METHOD} \
     --description="${CS_DESC}" \
     --time-zone=${CS_TZ} \
-    --headers=Content-Type="application/json",User-Agent="Google-Cloud-Scheduler"
+    --headers=Content-Type="application/json",User-Agent="Google-Cloud-Scheduler" \
+    --attempt-deadline=${CS_ATTEMPT_DEADLINE} \
+    --oidc-service-account-email=${SERVICE_ACCOUNT} \
+    --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
 
+
+gcloud functions call ${FUNCTION_NAME} --region=${REGION} --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
 
 
         # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \

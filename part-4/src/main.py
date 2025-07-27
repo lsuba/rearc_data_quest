@@ -25,10 +25,11 @@ def http_entry_point(request):
     request_json = request.get_json(silent=True)
 
     pipeline_name = request_json['de_job_name']
+    de_job_id = request_json['de_job_id']
 
     print('-------------------------------------------------------------------------------------')
     print(f'------------------------START OF THE PIPELINE [{pipeline_name}]---------------------')
-    logging_obj = LoggingJobRun()
+    logging_obj = LoggingJobRun(de_job_id)
 
     try:
         #--- extracting secret manager params ---#
@@ -171,8 +172,8 @@ def fetch_data_and_upload_to_gcs(nation_or_state, year, p2_bucket_name, global_b
 
 
 class LoggingJobRun:
-    def __init__(self):
-        self.de_job_id = '1234'
+    def __init__(self, de_job_id):
+        self.de_job_id = de_job_id
 
     def insert_logging_details():
         pass
@@ -198,10 +199,11 @@ class LoggingJobRun:
 if __name__ == "__main__":
     print(project_id)
     pipeline_name = 'rearc_data_quest_challenge'
+    de_job_id = '123'
 
     print('-------------------------------------------------------------------------------------')
     print(f'------------------------START OF THE PIPELINE [{pipeline_name}]---------------------')
-    logging_obj = LoggingJobRun()
+    logging_obj = LoggingJobRun(de_job_id)
 
     try:
         #--- extracting secret manager params ---#
@@ -243,7 +245,7 @@ if __name__ == "__main__":
     ###>>>>> Part 2 <<<<<###
 
     ###>>>>> Part 3 <<<<<###
-    
+
     ###>>>>> Part 3 <<<<<###
 
         print('-------------------------------------------------------------------------------------')
