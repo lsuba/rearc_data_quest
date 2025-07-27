@@ -4,3 +4,5 @@ steps:
   args:
   - "-e"
   - ./part-4/scripts/deploy.sh
+options:
+  logging: CLOUD_LOGGING_ONLY
