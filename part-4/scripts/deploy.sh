@@ -22,7 +22,8 @@ gcloud functions deploy ${FUNCTION_NAME} \
     --memory=${FUNCTION_MEMORY} \
     --timeout=${FUNCTION_TIMEOUT} \
     --cpu=${CPU_LIMIT} \
-    --ingress-settings=internal-only
+    --ingress-settings=internal-only \
+    --no-allow-unauthenticated \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
 echo '--- Update Cloud Run Revision ---'
