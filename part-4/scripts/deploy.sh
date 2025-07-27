@@ -12,7 +12,7 @@ echo $PROJECT_ID
 SERVICE_ACCOUNT="${SECRET_PROJECT}-${CS_SA}"
 echo $SERVICE_ACCOUNT
 
-echo '--- Deployment of Cloud Run Function ---'
+echo '#--- Deployment of Cloud Run Function ---#'
 gcloud functions deploy ${FUNCTION_NAME} \
     --region=${REGION} \
     --source=${CODE_PY_DIR} \
@@ -29,11 +29,11 @@ gcloud functions deploy ${FUNCTION_NAME} \
     --no-allow-unauthenticated \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
-echo '--- Update Cloud Run Revision ---'
+echo '#--- Update Cloud Run Revision ---#'
 gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
 
 
-echo '--- Deployment of Cloud Scheduler ---'
+echo '#--- Deployment of Cloud Scheduler ---#'
 gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
     --schedule="${CS_SCHEDULER_RUN}" \
     --uri="https://${REGION}-${PROJECT_ID}.cloudfunctions.net/${FUNCTION_NAME}" \
@@ -46,7 +46,10 @@ gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
     --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
 
 
-gcloud functions call ${FUNCTION_NAME} --region=${REGION} --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
+
+echo '#--- Trigger Cloud Run Function ---#'
+gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
+    --cloud-event --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
 
 
         # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \

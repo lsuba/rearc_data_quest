@@ -20,7 +20,7 @@ project_id = os.getenv("GCP_PROJECT_ID")
 
 
 ################################# CLOUD RUN FUNCTION #################################
-@functions_framework.cloud_event
+@functions_framework.http
 def http_entry_point(request):
     request_json = request.get_json(silent=True)
 
