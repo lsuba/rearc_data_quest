@@ -21,6 +21,7 @@ gcloud functions deploy ${FUNCTION_NAME} \
     --max-instances=${MAX_INSTANCES} \
     --memory=${FUNCTION_MEMORY} \
     --timeout=${FUNCTION_TIMEOUT} \
+    --cpu=${CPU_LIMIT} \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
 echo '--- Update Cloud Run Revision ---'
