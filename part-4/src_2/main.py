@@ -28,6 +28,7 @@ def pubsub_entry_point(cloud_event):
 
     try:
         data_json = cloud_event.data
+        print(type(data_json))
         print(data_json)
 
     # ###>>>>> Part 1 <<<<<###
