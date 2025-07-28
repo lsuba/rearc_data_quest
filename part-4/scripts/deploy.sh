@@ -48,8 +48,10 @@ gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
 
 
 echo '#--- Trigger Cloud Run Function ---#'
-gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
-    --cloud-event --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
+# gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
+#     --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
+
+gcloud functions call rearc-data-quest-challenge --region=us-central1 --data '{"name":"World", "message":"Hello from gcloud!"}'
 
 
         # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \
