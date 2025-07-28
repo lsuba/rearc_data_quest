@@ -13,25 +13,25 @@ echo $PROJECT_ID
 SERVICE_ACCOUNT="${SECRET_PROJECT}-${CS_SA}"
 echo $SERVICE_ACCOUNT
 
-echo '#--- Deployment of Cloud Run Function ---#'
-gcloud functions deploy ${FUNCTION_NAME} \
-    --region=${REGION} \
-    --source=${CODE_PY_DIR} \
-    --entry-point=${ENTRY_POINT} \
-    --gen2 \
-    --trigger-http \
-    --runtime=python312 \
-    --min-instances=${MIN_INSTANCES} \
-    --max-instances=${MAX_INSTANCES} \
-    --memory=${FUNCTION_MEMORY} \
-    --timeout=${FUNCTION_TIMEOUT} \
-    --cpu=${CPU_LIMIT} \
-    --ingress-settings=all \
-    --no-allow-unauthenticated \
-    --update-labels=developer=lordwin,gcp-service=cloud_function
+# echo '#--- Deployment of Cloud Run Function ---#'
+# gcloud functions deploy ${FUNCTION_NAME} \
+#     --region=${REGION} \
+#     --source=${CODE_PY_DIR} \
+#     --entry-point=${ENTRY_POINT} \
+#     --gen2 \
+#     --trigger-http \
+#     --runtime=python312 \
+#     --min-instances=${MIN_INSTANCES} \
+#     --max-instances=${MAX_INSTANCES} \
+#     --memory=${FUNCTION_MEMORY} \
+#     --timeout=${FUNCTION_TIMEOUT} \
+#     --cpu=${CPU_LIMIT} \
+#     --ingress-settings=all \
+#     --no-allow-unauthenticated \
+#     --update-labels=developer=lordwin,gcp-service=cloud_function
 
-echo '#--- Update Cloud Run Revision ---#'
-gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
+# echo '#--- Update Cloud Run Revision ---#'
+# gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
 
 
 # echo '#--- Deployment of Cloud Scheduler ---#'
@@ -48,7 +48,7 @@ gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-envir
 
 
 echo '#--- Deployment of Trigger CRF via GCS Event ---#'
-gcloud functions deploy ${FUNCTION_NAME} \
+gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --region=${REGION} \
     --source=${TRIGGER_CODE_PY_DIR} \
     --entry-point=${ENTRY_POINT} \
@@ -64,6 +64,9 @@ gcloud functions deploy ${FUNCTION_NAME} \
     --ingress-settings=all \
     --no-allow-unauthenticated \
     --update-labels=developer=lordwin,gcp-service=cloud_function
+
+echo '#--- Update Trigger CRF via GCS Event ---#'
+gcloud run services update ${TRIGGER_FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
 
 
 echo '#--- Trigger Cloud Run Function ---#'
