@@ -51,7 +51,7 @@ echo '#--- Deployment of Trigger CRF via GCS Event ---#'
 gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --region=${REGION} \
     --source=${TRIGGER_CODE_PY_DIR} \
-    --entry-point=${ENTRY_POINT} \
+    --entry-point=${TRIGGER_ENTRY_POINT} \
     --gen2 \
     --trigger-bucket=${BUCKET_NAME} \
     --runtime=python312 \
