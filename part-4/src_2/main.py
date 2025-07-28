@@ -27,8 +27,7 @@ def pubsub_entry_point(cloud_event):
     # logging_obj = LoggingJobRun(de_job_id)
 
     try:
-        data = base64.b64decode(cloud_event.data["message"]["data"])
-        data_json = json.loads(data)
+        data_json = cloud_event.data
         print(data_json)
 
     # ###>>>>> Part 1 <<<<<###
