@@ -53,8 +53,7 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --source=${TRIGGER_CODE_PY_DIR} \
     --entry-point=${ENTRY_POINT} \
     --gen2 \
-    --trigger-bucket \
-    --trigger-resource=${BUCKET_NAME} \
+    --trigger-bucket=${BUCKET_NAME} \
     --runtime=python312 \
     --min-instances=${MIN_INSTANCES} \
     --max-instances=${MAX_INSTANCES} \
@@ -64,6 +63,8 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --ingress-settings=all \
     --no-allow-unauthenticated \
     --update-labels=developer=lordwin,gcp-service=cloud_function
+
+# --trigger-resource=${BUCKET_NAME} \
 
 echo '#--- Update Trigger CRF via GCS Event ---#'
 gcloud run services update ${TRIGGER_FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
