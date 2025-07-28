@@ -15,7 +15,7 @@ from datetime import datetime as dt
 CS = storage.Client()
 PS = pubsub_v1.PublisherClient()
 DB = firestore.Client()
-
+project_id = os.getenv("GCP_PROJECT_ID")
 
 
 
@@ -24,36 +24,64 @@ DB = firestore.Client()
 def pubsub_entry_point(cloud_event):
     print('-------------------------------------------------------------------')
     print(f'------------------------START OF THE PIPELINE---------------------')
-    # logging_obj = LoggingJobRun(de_job_id)
+    logging_obj = LoggingJobRun('768945')
 
     try:
-        data_json = cloud_event.data
-        print(type(data_json))
-        print(data_json)
+        #--- extracting secret manager params ---#
+        project_name = get_secret_manager_key(project_id, 'project_name')
+        region_name = get_secret_manager_key(project_id, 'region_name')
 
-    # ###>>>>> Part 1 <<<<<###
-    #     print('Staring [PART-1] challenge...')
-    #     #NOTE: Add User-Agent with email for contact per BLS access policy
-    #     # pr_base_url = "https://download.bls.gov/pub/time.series/pr/"
-    #     bls_url = "https://download.bls.gov/pub/time.series"
-    #     user_agent_value = f"Python Script ({email_add})"
-    #     headers = {
-    #         "User-Agent": user_agent_value
-    #     }  
+        p1_bucket_name = get_secret_manager_key(project_id, 'p1_bucket_name')
+        p1_archive_bucket_name = get_secret_manager_key(project_id, 'p1_archive_bucket_name')
 
-    #     unique_filenames_dir = download_bls_data(bls_url, 'pr', headers)
-    #     print(f"✅ Found {len(unique_filenames_dir)} files in the directory:\n{unique_filenames_dir}")
-    #     print('\n')
-    #     global_bucket = CS.bucket(p1_bucket_name)
-    #     archive_bucket = CS.bucket(p1_archive_bucket_name)
-    #     transfer_files_to_bucket(bls_url, unique_filenames_dir, 'pr', headers, p1_bucket_name, global_bucket)
-    # ###>>>>> Part 1 <<<<<###
+        p2_bucket_name = get_secret_manager_key(project_id, 'p2_bucket_name')
+        p2_archive_bucket_name = get_secret_manager_key(project_id, 'p2_archive_bucket_name')
 
-    # ###>>>>> Part 2 <<<<<###
-    #     print('Staring [PART-2] challenge...')
-    #     global_bucket = CS.bucket(p2_bucket_name)
-    #     fetch_data_and_upload_to_gcs("Nation", "2013", p2_bucket_name, global_bucket)
-    # ###>>>>> Part 2 <<<<<###
+        email_add = get_secret_manager_key(project_id, 'email_add')
+        #--- extracting secret manager params ---#
+
+        data = cloud_event.data
+        # print(type(data))
+        print(data)
+
+    ###>>>>> Push Event to Pubsub for notification <<<<<###
+        publish_notif(cloud_event, data)
+    ###>>>>> Push Event to Pubsub for notification <<<<<###
+        
+    ###>>>>> Calculate the mean and standard deviation <<<<<###
+        print('Calculating the Mean and Standard Deviation...')
+        json_content_string = download_gcs_file(p2_bucket_name, "population_data.json")
+        df_p2 = get_df_p2(json_content_string)
+
+        filtered_df = df_p2[(df_p2['Year'] >= 2013) & (df_p2['Year'] <= 2018)]
+        population_mean = filtered_df['Population'].mean()
+        population_std = filtered_df['Population'].std()
+
+        print(f"Mean Population:     {population_mean:,.0f}")
+        print(f"Standard Deviation:  {population_std:,.0f}")
+        print('===============================================')
+    ###>>>>> Calculate the mean and standard deviation <<<<<###
+
+    ###>>>>> Calculate the BestYear for every Series <<<<<###
+        print('Calculating the best Year for every Series...')
+        json_content_string = download_gcs_file(p1_bucket_name, "pub/time.series/pr/pr.data.0.Current")
+        df_p1 = get_df_p1(json_content_string)
+
+        groupedby_dfp1 = df_p1.groupby(["series_id", "year"])["value"].sum().reset_index()
+        best_years = groupedby_dfp1.loc[groupedby_dfp1.groupby("series_id")["value"].idxmax()]
+
+        print(best_years.head(10))
+        print('===============================================')
+    ###>>>>> Calculate the BestYear for every Series <<<<<###
+
+    ###>>>>> Final Report <<<<<###
+        print('Generating final report for a specific series...')
+        filteredby = df_p1[(df_p1['series_id'] == 'PRS30006032') & (df_p1['period'] == 'Q01')]
+        df_p2.columns = df_p2.columns.str.lower()
+        results = pd.merge(filteredby, df_p2, on='year', how='inner')
+        final_report = results[['series_id', 'year', 'period', 'value', 'population']]
+        print(final_report)
+    ###>>>>> Final Report <<<<<###
 
         print('-------------------------------------------------------------------------------------')
         print(f'--------------------------------- END OF THE PIPELINE ------------------------------')
@@ -67,101 +95,68 @@ def pubsub_entry_point(cloud_event):
         print(f'--------------------------- END OF THE PIPELINE with ERRORS-------------------------')
 
 
+def publish_notif(cloud_event, data):
+    topic_path = PS.topic_path(project_id, "notif-gcs-bucket-finalized")
 
-# def get_secret_manager_key(project_id, secret_id):
-#     client = secretmanager.SecretManagerServiceClient()
-#     name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-#     response = client.access_secret_version(request={"name": name})
+    my_dict = {"payload": {
+            "Event Triggered from Bucket" : data["bucket"]
+            , "Event Type" : cloud_event["type"]
+            , "Event ID" : cloud_event["id"]
+            , "File Name Uploaded" :  data["name"]
+            , "Time Created" : data["timeCreated"]
+            , "Time Updated" : data["updated"]
+        }
+    }
+
+    ps_data = json.dumps(my_dict).encode("utf-8")
+    future = PS.publish(topic_path, ps_data)
+    print(future)
+
+def get_secret_manager_key(project_id, secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
  
-#     payload = response.payload.data.decode("UTF-8")
-#     return payload
+    payload = response.payload.data.decode("UTF-8")
+    return payload
 
-# def download_bls_data(bls_url, sub_url_dir, headers):
-#     url = f'{bls_url}/{sub_url_dir}/'    
+def download_gcs_file(p2_bucket_name, file_name):
+    # Download the file content from GCS
+    bucket = CS.bucket(p2_bucket_name)
+    blob = bucket.blob(file_name)
+    json_content_string = blob.download_as_text()
 
-#     #--- Fetch the directory page ---#
-#     response = requests.get(url, headers=headers)
-#     response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+    return json_content_string
 
-#     #--- Parse the HTML ---#
-#     soup = BeautifulSoup(response.text, 'html.parser')
+def get_df_p2(json_content_string):
+    # Load the string into a Python dictionary
+    data_dict = json.loads(json_content_string)
 
-#     files_dir = []
-#     for link in soup.find_all('a'):
-#         file_link = link.get('href')
-#         # file_name = file_link.split('/')[-1]
-#         # if re.search('pr.', file_name): 
-#         files_dir.append(file_link)
-#     return files_dir
+    # print(data_dict['data'])
+    df_p2 = pd.DataFrame(data_dict['data'])
+    # Strip whitespace from column names
+    df_p2.columns = df_p2.columns.str.strip()
 
-# def transfer_files_to_bucket(bls_url, unique_files_dir, suffix_fn, headers, p1_bucket_name, global_bucket):
-#     for each_file in unique_files_dir:
-#         if re.search(f'{suffix_fn}.', each_file):
-#             # print(each_file)
-#             for_cs_each_file = each_file.lstrip('/')
-#             # print(for_cs_each_file)
-#             extracted_fn = each_file.split('/')[-1]
-#             file_url = f'{bls_url}/{suffix_fn}/{extracted_fn}'
-#             print(file_url) 
+    return df_p2
 
-#             #--- Download the file content ---#
-#             file_response = requests.get(file_url, headers=headers)
-#             file_response.raise_for_status()
-#             file_data = file_response.content
-#             fmt_file_size = sizeof_fmt(len(file_data))
-               
-#             # ### destination_blob_name = f"{source_folder_path}/{each_file}"
-#             #NOTE: somehow GCS functionality will not upload same filename, it will always overwrite it
-#             upload_to_gcs(file_data, p1_bucket_name, for_cs_each_file, extracted_fn, fmt_file_size, global_bucket)
-#             print('==============================================')
- 
-# def upload_to_gcs(file_data, p1_bucket_name, destination_blob_name, extracted_fn, fmt_file_size, global_bucket):
-#     """Upload file data to a Google Cloud Storage bucket."""      
-#     blob = global_bucket.blob(destination_blob_name)    
-#     blob.upload_from_string(file_data)    
-#     print(f"Filename [{extracted_fn}] with {fmt_file_size} uploaded to [{p1_bucket_name}]")
- 
-# def sizeof_fmt(num):
-#     """Human friendly file size"""
-#     unit_list = list(zip(['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'], [0, 0, 1, 2, 2, 2]))
- 
-#     if num > 1:
-#         exponent = min(int(log(num, 1024)), len(unit_list) - 1)
-#         quotient = float(num) / 1024**exponent
-#         unit, num_decimals = unit_list[exponent]
-#         format_string = '{:.%sf} {}' % (num_decimals)
-#         return format_string.format(quotient, unit)
-#     if num == 0:
-#         return '0 bytes'
-#     if num == 1:
-#         return '1 byte'
-    
-# def fetch_data_and_upload_to_gcs(nation_or_state, year, p2_bucket_name, global_bucket):
-#     # The API endpoint provided
-#     url = f"https://honolulu-api.datausa.io/tesseract/data.jsonrecords?cube=acs_yg_total_population_1&drilldowns=Year%2CNation&locale=en&measures=Population"
+def get_df_p1(json_content_string):
+    df_p1 = pd.read_csv(io.StringIO(json_content_string), sep='\\s+')
+    # Strip whitespace from column names
+    df_p1.columns = df_p1.columns.str.strip()
+    df_p1['value'] = pd.to_numeric(df_p1['value'], errors='coerce')
 
-#     fn = 'population_data.json'
+    # Strip whitespace from column values
+    df_p1['series_id'] = df_p1['series_id'].str.strip()
 
-#     #--- Fetch the data from the API ---#
-#     print("Fetching data from API...")
-#     response = requests.get(url)
-#     response.raise_for_status()
-#     api_data = response.json() # Get the data as a Python dictionary
-#     fmt_file_size = sizeof_fmt(len(api_data))
-#     print("✅ Data fetched successfully.")
+    return df_p1
 
-#     #--- Convert the Python dictionary to a JSON formatted string ---#
-#     json_string = json.dumps(api_data, indent=4)
-
-#     #--- Upload to Cloud Storage bucket ---#
-#     upload_to_gcs(json_string, p2_bucket_name, fn, fn, fmt_file_size, global_bucket)
 
 
 class LoggingJobRun:
     def __init__(self, de_job_id):
         self.de_job_id = de_job_id
 
-    def insert_logging_details():
+    def insert_logging_details(self, err_message):
         pass
 
     def write_error_to_cloud_logging(self, err_message):
@@ -187,6 +182,8 @@ if __name__ == "__main__":
     print(project_id)
     pipeline_name = 'rearc_data_quest_challenge'
     de_job_id = '123'
+    cloud_event = {"type":"google.cloud.storage.object.v1.finalized", "id":"15648072656338516"}
+    data = {"bucket": "datausa_io_landing", "name":"population_data.json", "timeCreated":"2025-07-28T04:26:52.208Z", "updated":"2025-07-28T04:26:52.208Z"}
 
     print('-------------------------------------------------------------------------------------')
     print(f'------------------------START OF THE PIPELINE [{pipeline_name}]---------------------')
@@ -206,32 +203,44 @@ if __name__ == "__main__":
         email_add = get_secret_manager_key(project_id, 'email_add')
         #--- extracting secret manager params ---#
 
-    ###>>>>> Part 1 <<<<<###
-        #NOTE: Add User-Agent with email for contact per BLS access policy
-        # pr_base_url = "https://download.bls.gov/pub/time.series/pr/"
-        bls_url = "https://download.bls.gov/pub/time.series"
-        user_agent_value = f"Python Script ({email_add})"
-        headers = {
-            "User-Agent": user_agent_value
-        }  
+    ###>>>>> Push Event to Pubsub for notification <<<<<###
+        publish_notif(cloud_event, data)
+    ###>>>>> Push Event to Pubsub for notification <<<<<###
+        
+    ###>>>>> Calculate the mean and standard deviation <<<<<###
+        print('Calculating the Mean and Standard Deviation...')
+        json_content_string = download_gcs_file(p2_bucket_name, "population_data.json")
+        df_p2 = get_df_p2(json_content_string)
 
-        unique_filenames_dir = download_bls_data(bls_url, 'pr', headers)
-        print(f"✅ Found {len(unique_filenames_dir)} files in the directory:\n{unique_filenames_dir}")
-        print('\n')
-        global_bucket = CS.bucket(p1_bucket_name)
-        archive_bucket = CS.bucket(p1_archive_bucket_name)
-        transfer_files_to_bucket(bls_url, unique_filenames_dir, 'pr', headers, p1_bucket_name, global_bucket)
-    ###>>>>> Part 1 <<<<<###
+        filtered_df = df_p2[(df_p2['Year'] >= 2013) & (df_p2['Year'] <= 2018)]
+        population_mean = filtered_df['Population'].mean()
+        population_std = filtered_df['Population'].std()
 
-    ###>>>>> Part 2 <<<<<###
-        global_bucket = CS.bucket(p2_bucket_name)
-        fetch_data_and_upload_to_gcs("Nation", "2013", p2_bucket_name, global_bucket)
-    ###>>>>> Part 2 <<<<<###
+        print(f"Mean Population:     {population_mean:,.0f}")
+        print(f"Standard Deviation:  {population_std:,.0f}")
+        print('===============================================')
+    ###>>>>> Calculate the mean and standard deviation <<<<<###
 
-    ###>>>>> Part 3 <<<<<###
+    ###>>>>> Calculate the BestYear for every Series <<<<<###
+        print('Calculating the best Year for every Series...')
+        json_content_string = download_gcs_file(p1_bucket_name, "pub/time.series/pr/pr.data.0.Current")
+        df_p1 = get_df_p1(json_content_string)
 
-    ###>>>>> Part 3 <<<<<###
+        groupedby_dfp1 = df_p1.groupby(["series_id", "year"])["value"].sum().reset_index()
+        best_years = groupedby_dfp1.loc[groupedby_dfp1.groupby("series_id")["value"].idxmax()]
 
+        print(best_years.head(10))
+        print('===============================================')
+    ###>>>>> Calculate the BestYear for every Series <<<<<###
+
+    ###>>>>> Final Report <<<<<###
+        print('Generating final report for a specific series...')
+        filteredby = df_p1[(df_p1['series_id'] == 'PRS30006032') & (df_p1['period'] == 'Q01')]
+        df_p2.columns = df_p2.columns.str.lower()
+        results = pd.merge(filteredby, df_p2, on='year', how='inner')
+        final_report = results[['series_id', 'year', 'period', 'value', 'population']]
+        print(final_report)
+    ###>>>>> Final Report <<<<<###
         print('-------------------------------------------------------------------------------------')
         print(f'--------------------------------- END OF THE PIPELINE ------------------------------')
     except Exception as e:

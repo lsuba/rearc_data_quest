@@ -65,14 +65,20 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --cpu=${CPU_LIMIT} \
     --ingress-settings=all \
     --no-allow-unauthenticated \
+    --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID} \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
-# --trigger-resource=${BUCKET_NAME} \
-    # 
 
-# echo '#--- Update Trigger CRF via GCS Event ---#'
-# gcloud run services update ${TRIGGER_FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
+echo '#--- Update Trigger CRF via GCS Event ---#'
+gcloud run services update ${TRIGGER_FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
 
+
+echo '#--- Deploy PubSub ---#'
+gcloud pubsub topics create ${PUBSUB_TOPIC_NAME} \
+    --labels=developer=lordwin,gcp-service=pubsub
+gcloud pubsub subscriptions create ${PUBSUB_TOPIC_NAME}-sub \
+    --topic=${PUBSUB_TOPIC_NAME} --topic-project=${PROJECT_ID} \
+    --labels=developer=lordwin,gcp-service=pubsub --expiration-period=never
 
 echo '#--- Trigger Cloud Run Function ---#'
 # gcloud functions call ${FUNCTION_NAME} --region=${REGION} \

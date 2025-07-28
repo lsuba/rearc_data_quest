@@ -10,3 +10,4 @@ pandas-gbq
 google-cloud-pubsub
 google-cloud-firestore
 beautifulsoup4
+gcsfs
