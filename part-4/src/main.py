@@ -15,7 +15,7 @@ from datetime import datetime as dt
 CS = storage.Client()
 PS = pubsub_v1.PublisherClient()
 DB = firestore.Client()
-# project_id = os.getenv("GCP_PROJECT_ID")
+
 
 
 
@@ -42,9 +42,6 @@ def http_entry_point(request):
 
         p2_bucket_name = get_secret_manager_key(project_id, 'p2_bucket_name')
         p2_archive_bucket_name = get_secret_manager_key(project_id, 'p2_archive_bucket_name')
-
-        global_bucket = CS.bucket(p1_bucket_name)
-        archive_bucket = CS.bucket(p1_archive_bucket_name)
 
         email_add = get_secret_manager_key(project_id, 'email_add')
         #--- extracting secret manager params ---#
@@ -201,6 +198,7 @@ class LoggingJobRun:
 
 ################################# LOCAL TEST RUN #################################
 if __name__ == "__main__":
+    project_id = os.getenv("GCP_PROJECT_ID")
     print(project_id)
     pipeline_name = 'rearc_data_quest_challenge'
     de_job_id = '123'
@@ -219,9 +217,6 @@ if __name__ == "__main__":
 
         p2_bucket_name = get_secret_manager_key(project_id, 'p2_bucket_name')
         p2_archive_bucket_name = get_secret_manager_key(project_id, 'p2_archive_bucket_name')
-
-        global_bucket = CS.bucket(p1_bucket_name)
-        archive_bucket = CS.bucket(p1_archive_bucket_name)
 
         email_add = get_secret_manager_key(project_id, 'email_add')
         #--- extracting secret manager params ---#
