@@ -14,38 +14,38 @@ echo $PROJECT_ID
 SERVICE_ACCOUNT="${SECRET_PROJECT}-${CS_SA}"
 echo $SERVICE_ACCOUNT
 
-# echo '#--- Deployment of Cloud Run Function ---#'
-# gcloud functions deploy ${FUNCTION_NAME} \
-#     --region=${REGION} \
-#     --source=${CODE_PY_DIR} \
-#     --entry-point=${ENTRY_POINT} \
-#     --gen2 \
-#     --trigger-http \
-#     --runtime=python312 \
-#     --min-instances=${MIN_INSTANCES} \
-#     --max-instances=${MAX_INSTANCES} \
-#     --memory=${FUNCTION_MEMORY} \
-#     --timeout=${FUNCTION_TIMEOUT} \
-#     --cpu=${CPU_LIMIT} \
-#     --ingress-settings=all \
-#     --no-allow-unauthenticated \
-#     --update-labels=developer=lordwin,gcp-service=cloud_function
+echo '#--- Deployment of Cloud Run Function ---#'
+gcloud functions deploy ${FUNCTION_NAME} \
+    --region=${REGION} \
+    --source=${CODE_PY_DIR} \
+    --entry-point=${ENTRY_POINT} \
+    --gen2 \
+    --trigger-http \
+    --runtime=python312 \
+    --min-instances=${MIN_INSTANCES} \
+    --max-instances=${MAX_INSTANCES} \
+    --memory=${FUNCTION_MEMORY} \
+    --timeout=${FUNCTION_TIMEOUT} \
+    --cpu=${CPU_LIMIT} \
+    --ingress-settings=all \
+    --no-allow-unauthenticated \
+    --update-labels=developer=lordwin,gcp-service=cloud_function
 
-# echo '#--- Update Cloud Run Revision ---#'
-# gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
+echo '#--- Update Cloud Run Revision ---#'
+gcloud run services update ${FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
 
 
-# echo '#--- Deployment of Cloud Scheduler ---#'
-# gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
-#     --schedule="${CS_SCHEDULER_RUN}" \
-#     --uri="https://${REGION}-${PROJECT_ID}.cloudfunctions.net/${FUNCTION_NAME}" \
-#     --http-method=${CS_HTTP_METHOD} \
-#     --description="${CS_DESC}" \
-#     --time-zone=${CS_TZ} \
-#     --headers=Content-Type="application/json",User-Agent="Google-Cloud-Scheduler" \
-#     --attempt-deadline=${CS_ATTEMPT_DEADLINE} \
-#     --oidc-service-account-email=${SERVICE_ACCOUNT} \
-#     --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'", "project_name":"'${PROJECT_ID}'"}'
+echo '#--- Deployment of Cloud Scheduler ---#'
+gcloud scheduler jobs create http ${CLOUD_SCHEDULER_NAME} --location=${REGION} \
+    --schedule="${CS_SCHEDULER_RUN}" \
+    --uri="https://${REGION}-${PROJECT_ID}.cloudfunctions.net/${FUNCTION_NAME}" \
+    --http-method=${CS_HTTP_METHOD} \
+    --description="${CS_DESC}" \
+    --time-zone=${CS_TZ} \
+    --headers=Content-Type="application/json",User-Agent="Google-Cloud-Scheduler" \
+    --attempt-deadline=${CS_ATTEMPT_DEADLINE} \
+    --oidc-service-account-email=${SERVICE_ACCOUNT} \
+    --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'", "project_name":"'${PROJECT_ID}'"}'
 
 
 echo '#--- Deployment of Trigger CRF via GCS Event ---#'
@@ -81,13 +81,7 @@ gcloud pubsub subscriptions create ${PUBSUB_TOPIC_NAME}-sub \
     --labels=developer=lordwin,gcp-service=pubsub --expiration-period=never
 
 echo '#--- Trigger Cloud Run Function ---#'
-# gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
-#     --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
-
 gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
     --data '{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'", "project_name":"'${PROJECT_ID}'"}'
 
-
-        # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \
-        # --oidc-service-account-email=${SERVICE_ACCOUNT} \
-        # --attempt-deadline=${CS_ATTEMPT_DEADLINE} 
+echo '###--- END of deploy.sh ---###'

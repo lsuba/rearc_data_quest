@@ -242,11 +242,6 @@ if __name__ == "__main__":
         global_bucket = CS.bucket(p2_bucket_name)
         fetch_data_and_upload_to_gcs("Nation", "2013", p2_bucket_name, global_bucket)
     ###>>>>> Part 2 <<<<<###
-
-    ###>>>>> Part 3 <<<<<###
-
-    ###>>>>> Part 3 <<<<<###
-
         print('-------------------------------------------------------------------------------------')
         print(f'--------------------------------- END OF THE PIPELINE ------------------------------')
     except Exception as e:

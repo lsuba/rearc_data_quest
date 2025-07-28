@@ -1,14 +1,11 @@
 import functions_framework
-import requests, re, io, json, os, base64
+import io, json, os
 import pandas as pd
 
-from bs4 import BeautifulSoup
 from google.cloud import storage
-from math import log
 from google.cloud import secretmanager
 from google.cloud import pubsub_v1
 from google.cloud import firestore
-from datetime import datetime as dt
 
 
 ###>>>>> GCP CLIENT and GCP param <<<<<###
@@ -149,8 +146,6 @@ def get_df_p1(json_content_string):
     df_p1['series_id'] = df_p1['series_id'].str.strip()
 
     return df_p1
-
-
 
 class LoggingJobRun:
     def __init__(self, de_job_id):
