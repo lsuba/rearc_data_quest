@@ -56,6 +56,7 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --gen2 \
     --trigger-event=${EVENT_TYPE} \
     --trigger-resource=${EVENT_RESOURCE} \
+    --trigger-location=us \
     --runtime=python312 \
     --min-instances=${MIN_INSTANCES} \
     --max-instances=${MAX_INSTANCES} \
