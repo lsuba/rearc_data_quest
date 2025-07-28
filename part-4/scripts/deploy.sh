@@ -9,6 +9,7 @@ TRIGGER_CODE_PY_DIR="${DIR}/src_2"
 
 
 echo $CODE_PY_DIR
+echo $TRIGGER_CODE_PY_DIR
 echo $PROJECT_ID
 SERVICE_ACCOUNT="${SECRET_PROJECT}-${CS_SA}"
 echo $SERVICE_ACCOUNT
@@ -52,7 +53,9 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --region=${REGION} \
     --source=${TRIGGER_CODE_PY_DIR} \
     --entry-point=${TRIGGER_ENTRY_POINT} \
-    --trigger-bucket=${BUCKET_NAME} \
+    --gen2 \
+    --trigger-event=${EVENT_TYPE} \
+    --trigger-resource=${EVENT_RESOURCE} \
     --runtime=python312 \
     --min-instances=${MIN_INSTANCES} \
     --max-instances=${MAX_INSTANCES} \
@@ -64,7 +67,7 @@ gcloud functions deploy ${TRIGGER_FUNCTION_NAME} \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
 # --trigger-resource=${BUCKET_NAME} \
-    # --gen2 \
+    # 
 
 # echo '#--- Update Trigger CRF via GCS Event ---#'
 # gcloud run services update ${TRIGGER_FUNCTION_NAME} --region=${REGION} --execution-environment=gen2
