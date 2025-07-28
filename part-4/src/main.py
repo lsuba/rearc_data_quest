@@ -50,6 +50,7 @@ def http_entry_point(request):
         #--- extracting secret manager params ---#
 
     ###>>>>> Part 1 <<<<<###
+        print('Staring [PART-1] challenge...')
         #NOTE: Add User-Agent with email for contact per BLS access policy
         # pr_base_url = "https://download.bls.gov/pub/time.series/pr/"
         bls_url = "https://download.bls.gov/pub/time.series"
@@ -67,6 +68,7 @@ def http_entry_point(request):
     ###>>>>> Part 1 <<<<<###
 
     ###>>>>> Part 2 <<<<<###
+        print('Staring [PART-2] challenge...')
         global_bucket = CS.bucket(p2_bucket_name)
         fetch_data_and_upload_to_gcs("Nation", "2013", p2_bucket_name, global_bucket)
     ###>>>>> Part 2 <<<<<###
@@ -82,6 +84,7 @@ def http_entry_point(request):
         print('-------------------------------------------------------------------------------------')
         print(f'--------------------------- END OF THE PIPELINE with ERRORS-------------------------')
 
+    return 'Success'
 
 def get_secret_manager_key(project_id, secret_id):
     client = secretmanager.SecretManagerServiceClient()
