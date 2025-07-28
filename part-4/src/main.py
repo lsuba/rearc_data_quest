@@ -15,7 +15,7 @@ from datetime import datetime as dt
 CS = storage.Client()
 PS = pubsub_v1.PublisherClient()
 DB = firestore.Client()
-project_id = os.getenv("GCP_PROJECT_ID")
+# project_id = os.getenv("GCP_PROJECT_ID")
 
 
 
@@ -26,6 +26,7 @@ def http_entry_point(request):
 
     pipeline_name = request_json['de_job_name']
     de_job_id = request_json['de_job_id']
+    project_id = request_json['project_name']
 
     print('-------------------------------------------------------------------------------------')
     print(f'------------------------START OF THE PIPELINE [{pipeline_name}]---------------------')

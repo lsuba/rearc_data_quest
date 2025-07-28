@@ -25,7 +25,7 @@ gcloud functions deploy ${FUNCTION_NAME} \
     --memory=${FUNCTION_MEMORY} \
     --timeout=${FUNCTION_TIMEOUT} \
     --cpu=${CPU_LIMIT} \
-    --ingress-settings=internal-only \
+    --ingress-settings=all \
     --no-allow-unauthenticated \
     --update-labels=developer=lordwin,gcp-service=cloud_function
 
@@ -51,7 +51,8 @@ echo '#--- Trigger Cloud Run Function ---#'
 # gcloud functions call ${FUNCTION_NAME} --region=${REGION} \
 #     --data='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${DE_JOB_NAME}'"}'
 
-gcloud functions call rearc-data-quest-challenge --region=us-central1 --data '{"name":"World", "message":"Hello from gcloud!"}'
+gcloud functions call rearc-data-quest-challenge --region=us-central1 \
+    --data '{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'", "project_name":"'${PROJECT_ID}'"}'
 
 
         # --message-body='{"de_job_id":"'${DE_JOB_ID}'", "de_job_name":"'${FUNCTION_NAME}'"}' \
