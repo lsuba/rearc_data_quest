@@ -1,6 +1,7 @@
 ## Part 3 Deliverables:
-**0.** pr.data.0.Current: df_p1.txt
-- 0.a json file: df_p2.txt
+
+**0.** pr.data.0.Current: **_df_p1.txt_**
+- 0.a json file: **_df_p2.txt_**
 
 **1.** population_stats.txt
 
